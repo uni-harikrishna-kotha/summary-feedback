@@ -25,3 +25,5 @@ coverage/
 
 # Claude Code local settings
 .claude/settings.local.json
+/frontend/.angular/cache/17.3.17/babel-webpack
+/frontend/.angular
