@@ -78,50 +78,52 @@ class GrpcConversationFetcher(ConversationFetcher):
         experience_id: Optional[str] = None,
     ) -> list[tuple[str, int]]:
         try:
-            from uniphore.conversations.v1 import conversations_pb2, conversations_pb2_grpc
+            from uniphore.conversations.v1 import service_pb2, service_pb2_grpc
         except ImportError:
             logger.error("uniphore-protos package not installed")
             return []
 
+        Req = service_pb2.ListConversationsRequestV2
+
         channel = grpc.insecure_channel(f"{self.host}:{self.port}")
-        stub = conversations_pb2_grpc.ConversationsServiceStub(channel)
+        stub = service_pb2_grpc.ConversationsServiceStub(channel)
 
         metadata = [("authorization", f"Bearer {jwt_token}")]
 
-        time_filter = conversations_pb2.ListConversationsRequestV2.Filter(
-            field=conversations_pb2.ListConversationsRequestV2.CONVERSATION_FIELD_END_TIMESTAMP,
-            operator=conversations_pb2.ListConversationsRequestV2.CONVERSATION_FILTER_OPERATOR_GREATER_THAN_OR_EQUAL,
-            number_value=float(since_ns),
+        time_filter = Req.Filter(
+            field=Req.CONVERSATION_FIELD_END_TIMESTAMP,
+            operator=Req.CONVERSATION_FILTER_OPERATOR_GREATER_THAN_OR_EQUAL,
+            double_value=float(since_ns),
         )
 
         if experience_id:
-            group_filter = conversations_pb2.ListConversationsRequestV2.GroupFilter(
+            group_filter = Req.GroupFilter(
                 left_filter=time_filter,
-                right_filter=conversations_pb2.ListConversationsRequestV2.Filter(
-                    field=conversations_pb2.ListConversationsRequestV2.CONVERSATION_FIELD_CONVERSATION_EXPERIENCE_ID,
-                    operator=conversations_pb2.ListConversationsRequestV2.CONVERSATION_FILTER_OPERATOR_EQUAL,
+                right_filter=Req.Filter(
+                    field=Req.CONVERSATION_FIELD_CONVERSATION_EXPERIENCE_ID,
+                    operator=Req.CONVERSATION_FILTER_OPERATOR_EQUAL,
                     string_value=experience_id,
                 ),
-                operator=conversations_pb2.ListConversationsRequestV2.GROUP_OPERATOR_AND,
+                operator=Req.CONVERSATION_LOGICAL_OPERATOR_AND,
             )
         else:
-            group_filter = conversations_pb2.ListConversationsRequestV2.GroupFilter(
+            group_filter = Req.GroupFilter(
                 left_filter=time_filter,
             )
 
         fields = [
-            conversations_pb2.ListConversationsRequestV2.CONVERSATION_FIELD_CONVERSATION_ID,
-            conversations_pb2.ListConversationsRequestV2.CONVERSATION_FIELD_END_TIMESTAMP,
+            Req.CONVERSATION_FIELD_CONVERSATION_ID,
+            Req.CONVERSATION_FIELD_END_TIMESTAMP,
         ]
 
         order_by = [
-            conversations_pb2.ListConversationsRequestV2.OrderBy(
-                field=conversations_pb2.ListConversationsRequestV2.CONVERSATION_FIELD_END_TIMESTAMP,
-                direction=conversations_pb2.ListConversationsRequestV2.CONVERSATION_ORDER_DIRECTION_DESC,
+            Req.OrderBy(
+                field=Req.CONVERSATION_FIELD_END_TIMESTAMP,
+                direction=Req.CONVERSATION_ORDER_DIRECTION_DESC,
             )
         ]
 
-        request = conversations_pb2.ListConversationsRequestV2(
+        request = Req(
             tenant_id=tenant_id,
             environment=environment,
             group_filter=group_filter,
@@ -133,13 +135,16 @@ class GrpcConversationFetcher(ConversationFetcher):
         try:
             response = stub.ListConversationsV2(request, metadata=metadata)
         except grpc.RpcError as e:
-            logger.error("gRPC error fetching conversation IDs: %s", e.code())
+            logger.error("gRPC error fetching conversation IDs: %s", e)
             return []
 
-        return [
-            (conv.conversation_id, conv.end_timestamp)
-            for conv in response.conversations
-        ]
+        results = []
+        for conv in response.conversations:
+            ts = conv.session.end_timestamp
+            end_ns = ts.seconds * 1_000_000_000 + ts.nanos
+            results.append((conv.conversation_id, end_ns))
+        logger.info("gRPC returned %d conversation IDs", len(results))
+        return results
 
     async def _fetch_conversation_details(
         self,
