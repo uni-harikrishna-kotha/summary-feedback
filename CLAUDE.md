@@ -13,7 +13,7 @@ summary-feedback/
 ├── backend/
 │   ├── app/
 │   │   ├── api/          # FastAPI route handlers (POST /v1/scoring/run, GET /v1/scoring/run/{job_id})
-│   │   ├── services/     # JWT validation, conversation fetching, LLM scoring, aggregation
+│   │   ├── services/     # Conversation fetching, LLM scoring, aggregation
 │   │   └── models/       # Pydantic request/response models
 │   ├── tests/
 │   └── requirements.txt
@@ -51,11 +51,10 @@ summary-feedback/
 ┌──────────────────────────────────────────────────────┐
 │              Scoring API (Backend)                   │
 │                                                      │
-│  1. Validate JWT token                               │
-│  2. Step 1 — gRPC ListConversationsV2                │
+│  1. Step 1 — gRPC ListConversationsV2                │
 │     └─ Fetch conversation IDs + end timestamps only  │
 │     └─ Filter: last 24h, limit 10, order DESC        │
-│  3. Step 2 — REST API (per conversation ID)          │
+│  2. Step 2 — REST API (per conversation ID)          │
 │     └─ GET /diana/v2/conversations/{tenant}/{id}     │
 │     └─ Extract: transcript turns + genAiSummary      │
 └─────────────────────┬────────────────────────────────┘
@@ -156,7 +155,6 @@ Response (completed):
 ## Backend Implementation Guide
 
 - **Framework:** Python 3.12 + FastAPI
-- **JWT validation:** Decode and verify the `tenant` claim matches the `tenant_id` input before any downstream calls. Reject with 401 if expired, malformed, or tenant claim mismatch.
 - **Conversation fetching:** Use `ListConversationsV2` gRPC (see `list-conversations-v2.md`):
   - Filter: `END_TIMESTAMP >= now-24h`, ordered by `END_TIMESTAMP DESC`, `page_size=10`
   - Required fields: `CONVERSATION_ID`, `END_TIMESTAMP`, transcript fields, summary fields

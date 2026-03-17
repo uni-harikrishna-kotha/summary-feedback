@@ -13,8 +13,7 @@ from app.models.responses import ScoringJobResult, ScoringRunAccepted
 from app.services import aggregation_service
 from app.services.conversation_fetcher import ConversationFetcher
 from app.services.job_store import job_store
-from app.services import jwt_service, scoring_service
-from app.services.jwt_service import AuthError
+from app.services import scoring_service
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +27,6 @@ async def run_scoring(
     settings: Settings = Depends(get_settings),
     fetcher: ConversationFetcher = Depends(get_fetcher),
 ):
-    try:
-        jwt_service.validate_jwt(request.jwt_token, request.tenant_id)
-    except AuthError as e:
-        raise HTTPException(status_code=401, detail=str(e))
-
     job_id = f"score_{uuid.uuid4().hex[:8]}"
     await job_store.create(job_id, request.tenant_id)
 
