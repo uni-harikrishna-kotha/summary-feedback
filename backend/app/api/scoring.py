@@ -2,6 +2,7 @@ import asyncio
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
@@ -27,12 +28,6 @@ async def run_scoring(
     settings: Settings = Depends(get_settings),
     fetcher: ConversationFetcher = Depends(get_fetcher),
 ):
-    if not settings.tenant_summary_template:
-        raise HTTPException(
-            status_code=422,
-            detail="No summary template configured for this tenant",
-        )
-
     try:
         jwt_service.validate_jwt(request.jwt_token, request.tenant_id)
     except AuthError as e:
@@ -46,6 +41,9 @@ async def run_scoring(
         job_id=job_id,
         tenant_id=request.tenant_id,
         jwt_token=request.jwt_token,
+        environment=request.environment,
+        summary_template=request.summary_template,
+        experience_id=request.experience_id,
         settings=settings,
         fetcher=fetcher,
     )
@@ -69,6 +67,9 @@ async def _run_scoring_job(
     job_id: str,
     tenant_id: str,
     jwt_token: str,
+    environment: str,
+    summary_template: str,
+    experience_id: Optional[str],
     settings: Settings,
     fetcher: ConversationFetcher,
 ):
@@ -77,7 +78,11 @@ async def _run_scoring_job(
         since = now - timedelta(hours=24)
         since_ns = int(since.timestamp() * 1e9)
 
-        convs = await fetcher.fetch_recent(tenant_id, jwt_token, since_ns)
+        convs = await fetcher.fetch_recent(
+            tenant_id, jwt_token, since_ns,
+            environment=environment,
+            experience_id=experience_id,
+        )
 
         window_start = since.isoformat()
         window_end = now.isoformat()
@@ -101,7 +106,7 @@ async def _run_scoring_job(
 
         results = await asyncio.gather(
             *[
-                scoring_service.score_call(conv, settings.tenant_summary_template, settings)
+                scoring_service.score_call(conv, summary_template, settings)
                 for conv in convs
             ]
         )

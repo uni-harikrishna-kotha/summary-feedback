@@ -8,4 +8,6 @@ def get_fetcher() -> ConversationFetcher:
     return GrpcConversationFetcher(
         host=settings.conversations_grpc_host,
         port=settings.conversations_grpc_port,
+        rest_base_url=settings.conversations_rest_base_url,
+        environment=settings.environment,
     )

@@ -32,7 +32,7 @@ summary-feedback/
 | Backend  | Python 3.12 + FastAPI |
 | Frontend | Angular      |
 | LLM      | OpenAI gpt-4o (configurable) |
-| Data API | ListConversationsV2 gRPC |
+| Data API | ListConversationsV2 gRPC + Diana REST API |
 
 ---
 
@@ -52,9 +52,12 @@ summary-feedback/
 │              Scoring API (Backend)                   │
 │                                                      │
 │  1. Validate JWT token                               │
-│  2. Call Data Fetch API (Bearer: JWT)                │
-│     └─ GET last 10 calls (past 24h only) for tenant  │
-│     └─ Score ONLY these 10 calls — no more           │
+│  2. Step 1 — gRPC ListConversationsV2                │
+│     └─ Fetch conversation IDs + end timestamps only  │
+│     └─ Filter: last 24h, limit 10, order DESC        │
+│  3. Step 2 — REST API (per conversation ID)          │
+│     └─ GET /diana/v2/conversations/{tenant}/{id}     │
+│     └─ Extract: transcript turns + genAiSummary      │
 └─────────────────────┬────────────────────────────────┘
                       │
              For each call (up to 10)
@@ -93,7 +96,10 @@ summary-feedback/
 Body:
 {
   "tenant_id": "acme-corp",
-  "jwt_token": "<user-provided JWT>"
+  "jwt_token": "<user-provided JWT>",
+  "environment": "prod",            // default: "prod"
+  "summary_template": "<template>", // required; the prompt used to generate summaries for this tenant
+  "experience_id": "exp-123"        // optional; if set, only conversations with this experience ID are fetched
 }
 
 Response (202 Accepted):
@@ -270,6 +276,7 @@ OPENAI_API_KEY=...
 OPENAI_MODEL=gpt-4o          # default
 CONVERSATIONS_GRPC_HOST=conversations-service
 CONVERSATIONS_GRPC_PORT=50051
+CONVERSATIONS_REST_BASE_URL=https://api.us.cloud.uniphorestaging.com
 ```
 
 ---
@@ -299,15 +306,42 @@ CONVERSATIONS_GRPC_PORT=50051
 
 ## Fetching Conversations
 
-To fetch conversations for a given tenant, use the `ListConversationsV2` gRPC API documented in [`list-conversations-v2.md`](./list-conversations-v2.md).
+Conversation data is fetched in two steps:
+
+### Step 1 — gRPC: Get Conversation IDs
+
+Use `ListConversationsV2` to retrieve **only** conversation IDs and end timestamps for the past 24h. See [`list-conversations-v2.md`](./list-conversations-v2.md) for the full API reference.
 
 **Key details:**
 - **gRPC service:** `ConversationsService`
-- **Method:** `ListConversationsV2` (offset/token pagination) or `ListConversationsV2Cursor` (cursor-based, requires LaunchDarkly flag `IsEnableUsingLastSeenId`)
-- **Required request fields:** `tenant_id`, `environment`, `group_filter`, `fields`
-- **Pagination:** Pass `next_page_token` from the response back as `page_token` in the next request; empty token means no more pages
-- **Auth:** JWT passed in gRPC metadata under the `authorization` header; `tenant` claim in JWT must match `tenant_id`
-- **Max page size:** 500
-- **Array fields** (alerts, policies, participants, etc.) must use `CONTAINS` / `CONTAINS_ANY` operators — `EQUAL` on array fields returns `INVALID_ARGUMENT`
+- **Method:** `ListConversationsV2`
+- **Requested fields:** `CONVERSATION_ID`, `END_TIMESTAMP` only (no transcript/metadata fields)
+- **Base filter:** `END_TIMESTAMP >= now-24h`, ordered `DESC`, `page_size=10`
+- **Optional filter:** `CONVERSATION_EXPERIENCE_ID == experience_id` (user-supplied; ANDed with the time filter using `GROUP_OPERATOR_AND` when present)
+- **Auth:** JWT in gRPC `authorization` metadata header
+- **Array fields** must use `CONTAINS` / `CONTAINS_ANY` operators
 
-See [`list-conversations-v2.md`](./list-conversations-v2.md) for the full field reference, filter examples, and pagination code samples.
+### Step 2 — REST: Get Full Conversation Details
+
+For each conversation ID returned by gRPC, call the Diana REST API to fetch the transcript and generated summary.
+
+**Endpoint:**
+```
+GET {CONVERSATIONS_REST_BASE_URL}/diana/v2/conversations/{tenant_id}/{conversation_id}?environment={env}
+```
+
+**Required headers:**
+```
+X-Source: service
+X-Tenant-Id: {tenant_id}
+Authorization: Bearer {jwt_token}
+```
+
+**Used response fields:**
+- `transcript.turns[].order` — turn ordering
+- `transcript.turns[].participantType` — speaker type (e.g. `AGENT`, `CUSTOMER`)
+- `transcript.turns[].words[].text` — individual word text; joined with spaces per turn to form the turn's spoken text
+- `summary.genAiSummary.sections[].id` — section identifier
+- `summary.genAiSummary.sections[].text` — section content; sections are joined as `"{id}: {text}"` per line to form the generated summary
+
+**Environment variable:** `CONVERSATIONS_REST_BASE_URL` (default: `https://api.us.cloud.uniphorestaging.com`)

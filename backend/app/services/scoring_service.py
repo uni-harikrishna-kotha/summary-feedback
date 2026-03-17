@@ -56,18 +56,8 @@ def _ns_to_iso(ns: int) -> str:
 async def score_call(conv: ConversationData, template: str, settings=None) -> CallScoreResult:
     call_end_time = _ns_to_iso(conv.end_timestamp_ns)
 
-    # Extract summary
-    summary = None
-    summary_field = "generated_summary"
-    if settings:
-        summary_field = settings.summary_field_name
-
-    if conv.app_metadata:
-        try:
-            meta = json.loads(conv.app_metadata)
-            summary = meta.get(summary_field)
-        except (json.JSONDecodeError, AttributeError):
-            summary = None
+    # Extract summary — already parsed from app_metadata by the fetcher
+    summary = conv.generated_summary
 
     if not summary:
         return CallScoreResult(

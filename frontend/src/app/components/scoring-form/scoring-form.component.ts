@@ -21,7 +21,10 @@ export class ScoringFormComponent {
   constructor(private fb: FormBuilder, private scoringApi: ScoringApiService) {
     this.form = this.fb.group({
       tenantId: ['', Validators.required],
-      jwtToken: ['', Validators.required]
+      jwtToken: ['', Validators.required],
+      environment: ['prod', Validators.required],
+      experienceId: [''],
+      summaryTemplate: ['', Validators.required],
     });
   }
 
@@ -33,9 +36,15 @@ export class ScoringFormComponent {
     this.isLoading = true;
     this.errorMessage = null;
 
-    const { tenantId, jwtToken } = this.form.value;
+    const { tenantId, jwtToken, environment, experienceId, summaryTemplate } = this.form.value;
 
-    this.scoringApi.runScoring({ tenant_id: tenantId, jwt_token: jwtToken }).subscribe({
+    this.scoringApi.runScoring({
+      tenant_id: tenantId,
+      jwt_token: jwtToken,
+      environment,
+      summary_template: summaryTemplate,
+      ...(experienceId ? { experience_id: experienceId } : {}),
+    }).subscribe({
       next: (result) => {
         this.isLoading = false;
         this.scoringComplete.emit(result);

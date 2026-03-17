@@ -1,6 +1,9 @@
 export interface ScoringRunRequest {
   tenant_id: string;
   jwt_token: string;
+  environment: string;
+  summary_template: string;
+  experience_id?: string;
 }
 
 export interface ScoringRunAccepted {
