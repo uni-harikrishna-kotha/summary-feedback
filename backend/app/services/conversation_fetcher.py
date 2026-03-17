@@ -85,7 +85,8 @@ class GrpcConversationFetcher(ConversationFetcher):
 
         Req = service_pb2.ListConversationsRequestV2
 
-        channel = grpc.insecure_channel(f"{self.host}:{self.port}")
+        credentials = grpc.ssl_channel_credentials()
+        channel = grpc.secure_channel(f"{self.host}:{self.port}", credentials)
         stub = service_pb2_grpc.ConversationsServiceStub(channel)
 
         metadata = [("authorization", f"Bearer {jwt_token}")]
