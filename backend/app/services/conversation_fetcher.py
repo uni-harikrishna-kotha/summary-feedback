@@ -83,6 +83,8 @@ class GrpcConversationFetcher(ConversationFetcher):
             logger.error("uniphore-protos package not installed")
             return []
 
+        from google.protobuf.timestamp_pb2 import Timestamp
+
         Req = service_pb2.ListConversationsRequestV2
 
         credentials = grpc.ssl_channel_credentials()
@@ -91,10 +93,14 @@ class GrpcConversationFetcher(ConversationFetcher):
 
         metadata = [("authorization", f"Bearer {jwt_token}")]
 
+        since_ts = Timestamp(
+            seconds=since_ns // 1_000_000_000,
+            nanos=since_ns % 1_000_000_000,
+        )
         time_filter = Req.Filter(
             field=Req.CONVERSATION_FIELD_END_TIMESTAMP,
             operator=Req.CONVERSATION_FILTER_OPERATOR_GREATER_THAN_OR_EQUAL,
-            double_value=float(since_ns),
+            timestamp_value=since_ts,
         )
 
         if experience_id:
