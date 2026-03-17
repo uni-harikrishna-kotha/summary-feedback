@@ -1,0 +1,113 @@
+.scoring-window {
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #666;
+}
+
+.overall-score {
+  margin-bottom: 24px;
+
+  h2 {
+    margin-bottom: 8px;
+  }
+
+  .score-value {
+    font-size: 48px;
+    font-weight: bold;
+    color: #1976d2;
+
+    &.na {
+      color: #999;
+      font-size: 32px;
+    }
+  }
+}
+
+.stats {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 16px;
+  font-size: 14px;
+
+  .stat {
+    color: #666;
+  }
+}
+
+.warning-banner {
+  background: #fff3e0;
+  border: 1px solid #ff9800;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.no-calls-message {
+  color: #666;
+  font-style: italic;
+}
+
+.empty-state {
+  color: #666;
+  font-style: italic;
+  padding: 24px 0;
+  text-align: center;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+
+  th, td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+  }
+
+  th {
+    background: #f5f5f5;
+    font-weight: 600;
+  }
+
+  tr.expandable {
+    cursor: pointer;
+
+    &:hover {
+      background: #f9f9f9;
+    }
+  }
+
+  tr.no-summary td {
+    color: #999;
+  }
+
+  tr.failed td {
+    color: #d32f2f;
+  }
+
+  .expand-toggle {
+    width: 24px;
+    color: #666;
+  }
+
+  .composite-score {
+    font-weight: 600;
+  }
+
+  .failed-label {
+    color: #d32f2f;
+  }
+}
+
+.rationale-row td {
+  background: #fafafa;
+  padding: 12px 24px;
+
+  .rationale {
+    line-height: 1.8;
+    font-size: 13px;
+    color: #555;
+  }
+}
