@@ -1,5 +1,17 @@
 # CLAUDE.md — summary-feedback
 
+## PRD Policy
+
+**All enhancements and features must be backed by a PRD.**
+
+- Every new feature or significant change to this project must have a corresponding PRD file in the `PRD/` folder before any updates are made to this `CLAUDE.md` file.
+- PRD files follow the naming convention: `PRD_<Feature_Name>.md`
+- When updating `CLAUDE.md` to reflect new functionality, verify that the relevant PRD exists in `PRD/`. If it does not exist, create it first.
+- Current PRDs:
+  - `PRD/PRD_Summary_Feedback_Scoring.md` — Core scoring tool
+
+---
+
 ## Project Purpose
 
 This is an on-demand call summary quality scoring tool. A user provides a Tenant ID and a JWT auth token via a UI. The backend validates the JWT, then fetches the last 10 calls from the past 24 hours for that tenant using the `ListConversationsV2` gRPC API. A Judge LLM (OpenAI `gpt-4o`) scores each call summary against its transcript and the tenant's summary template prompt across three dimensions. The UI displays per-call scores and a single overall tenant score for the past 24-hour window.
