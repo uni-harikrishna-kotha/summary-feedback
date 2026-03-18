@@ -1,0 +1,80 @@
+.form-header {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--color-border);
+
+  h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--color-dark);
+  }
+
+  .form-description {
+    font-size: 14px;
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+
+  &.form-row-3 {
+    grid-template-columns: 1fr 1fr 1fr;
+
+    @media (max-width: 800px) {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.optional-tag {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 4px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.template-textarea {
+  resize: vertical;
+  min-height: 130px;
+  font-family: 'Lato', sans-serif;
+  line-height: 1.6;
+}
+
+.field-hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin: 6px 0 0;
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.spinner {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

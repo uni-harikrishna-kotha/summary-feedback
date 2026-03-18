@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Node
+node_modules/
+dist/
+
+# Coverage
+.coverage
+htmlcov/
+coverage/
+
+# Claude Code local settings
+.claude/settings.local.json
+/frontend/.angular/cache/17.3.17/babel-webpack
+/frontend/.angular

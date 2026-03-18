@@ -1,0 +1,88 @@
+<div class="card">
+  <div class="form-header">
+    <h2>Scoring Configuration</h2>
+    <p class="form-description">Provide tenant credentials and the summary template used to generate call summaries.</p>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="form-row form-row-3">
+      <div class="form-group">
+        <label class="form-label" for="tenantId">Tenant ID</label>
+        <input
+          id="tenantId"
+          type="text"
+          formControlName="tenantId"
+          placeholder="e.g. acme-corp"
+          class="form-control"
+        />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="environment">Environment</label>
+        <select id="environment" formControlName="environment" class="form-control">
+          <option value="prod">Production</option>
+          <option value="staging">Staging</option>
+          <option value="dev">Development</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="experienceId">Experience ID <span class="optional-tag">optional</span></label>
+        <input
+          id="experienceId"
+          type="text"
+          formControlName="experienceId"
+          placeholder="Filter by experience ID"
+          class="form-control"
+        />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="jwtToken">JWT Auth Token</label>
+      <input
+        id="jwtToken"
+        type="password"
+        formControlName="jwtToken"
+        placeholder="Paste JWT token"
+        class="form-control"
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="summaryTemplate">Summary Template Prompt</label>
+      <textarea
+        id="summaryTemplate"
+        formControlName="summaryTemplate"
+        placeholder="Paste the summary template prompt used to generate call summaries for this tenant..."
+        class="form-control template-textarea"
+        rows="6"
+      ></textarea>
+      <p class="field-hint">This template is used as the quality standard when scoring each call summary.</p>
+    </div>
+
+    <div class="error-message" *ngIf="errorMessage">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <circle cx="8" cy="8" r="7.5" stroke="currentColor"/>
+        <path d="M8 4.5v4M8 10.5v1" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      {{ errorMessage }}
+    </div>
+
+    <div class="form-actions">
+      <button
+        type="submit"
+        class="btn-primary"
+        [disabled]="isLoading || form.invalid"
+      >
+        <svg *ngIf="!isLoading" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M8 1L15 8L8 15M1 8h14" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <svg *ngIf="isLoading" class="spinner" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.35)" stroke-width="2"/>
+          <path d="M8 2a6 6 0 0 1 6 6" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span *ngIf="isLoading">Scoring in progress...</span>
+        <span *ngIf="!isLoading">Run Scoring</span>
+      </button>
+    </div>
+  </form>
+</div>

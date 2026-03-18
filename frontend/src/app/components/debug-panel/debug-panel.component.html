@@ -1,0 +1,66 @@
+<div class="debug-panel" *ngIf="debugMode">
+  <div class="debug-header" (click)="toggle()">
+    <div class="debug-title">
+      <span class="debug-badge">DEBUG</span>
+      <span>API Request Log</span>
+      <span class="entry-count" *ngIf="(logs$ | async) as logs">{{ logs.length }} request{{ logs.length !== 1 ? 's' : '' }}</span>
+    </div>
+    <div class="debug-controls" (click)="$event.stopPropagation()">
+      <button class="btn-clear" (click)="clear()">Clear</button>
+      <button class="btn-toggle" (click)="toggle()">{{ collapsed ? '▲' : '▼' }}</button>
+    </div>
+  </div>
+
+  <div class="debug-body" [class.collapsed]="collapsed">
+    <ng-container *ngIf="(logs$ | async) as logs">
+      <div *ngIf="logs.length === 0" class="debug-empty">
+        No requests yet. Submit a scoring run to see API calls here.
+      </div>
+
+      <div *ngFor="let entry of logs; let i = index" class="debug-entry" [class.expanded]="isExpanded(entry.id)">
+        <div class="entry-row" (click)="toggleEntry(entry.id)">
+          <span class="entry-index">#{{ i + 1 }}</span>
+          <span class="entry-status-dot" [ngClass]="statusClass(entry)"></span>
+          <span class="entry-method" [class.method-get]="entry.method === 'GET'" [class.method-post]="entry.method === 'POST'">
+            {{ entry.method }}
+          </span>
+          <span class="entry-url">{{ entry.url }}</span>
+          <span class="entry-step">{{ entry.step }}</span>
+          <span class="entry-meta">
+            <span *ngIf="entry.pending" class="pending-indicator">pending...</span>
+            <ng-container *ngIf="!entry.pending">
+              <span class="entry-status" [class.status-ok]="entry.status && entry.status < 400" [class.status-error]="entry.status && entry.status >= 400">
+                {{ entry.status }}
+              </span>
+              <span class="entry-duration">{{ entry.durationMs }}ms</span>
+            </ng-container>
+          </span>
+          <span class="entry-time">{{ entry.timestamp | date:'HH:mm:ss.SSS' }}</span>
+          <span class="expand-icon">{{ isExpanded(entry.id) ? '▾' : '▸' }}</span>
+        </div>
+
+        <div class="entry-detail" *ngIf="isExpanded(entry.id)">
+          <div class="detail-section">
+            <div class="detail-label">URL</div>
+            <div class="detail-value detail-url">{{ entry.url }}</div>
+          </div>
+
+          <div class="detail-section" *ngIf="entry.requestBody">
+            <div class="detail-label">Request Body</div>
+            <pre class="detail-value detail-json">{{ formatJson(entry.requestBody) }}</pre>
+          </div>
+
+          <div class="detail-section" *ngIf="entry.responseBody">
+            <div class="detail-label">Response <span class="detail-status-badge" [class.ok]="entry.status && entry.status < 400" [class.err]="entry.status && entry.status >= 400">{{ entry.status }}</span></div>
+            <pre class="detail-value detail-json">{{ formatJson(entry.responseBody) }}</pre>
+          </div>
+
+          <div class="detail-section" *ngIf="entry.error">
+            <div class="detail-label">Error</div>
+            <div class="detail-value detail-error">{{ entry.error }}</div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</div>

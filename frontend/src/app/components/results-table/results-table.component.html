@@ -1,0 +1,116 @@
+<div class="card">
+  <div class="results-header">
+    <div>
+      <h2>Scoring Results</h2>
+      <div class="scoring-window" *ngIf="result.window_start && result.window_end">
+        Calls from {{ result.window_start | date:'medium':'UTC' }} to {{ result.window_end | date:'medium':'UTC' }} UTC
+      </div>
+    </div>
+    <div class="overall-score-block">
+      <div class="score-label">Overall Score (Past 24h)</div>
+      <div class="score-value" [class.na]="result.overall_score === null">
+        <ng-container *ngIf="result.overall_score !== null">
+          {{ result.overall_score | number:'1.2-2' }}<span class="score-denom"> / 10</span>
+        </ng-container>
+        <ng-container *ngIf="result.overall_score === null">N/A</ng-container>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-chip">
+      <span class="stat-dot scored"></span>
+      Scored: {{ result.calls_scored }}
+    </div>
+    <div class="stat-chip">
+      <span class="stat-dot missing"></span>
+      No Summary: {{ result.calls_missing_summary }}
+    </div>
+    <div class="stat-chip">
+      <span class="stat-dot failed"></span>
+      Failed: {{ result.calls_unscored }}
+    </div>
+  </div>
+
+  <div *ngIf="hasUnscoredCalls" class="warning-banner">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+      <path d="M8 1L15 14H1L8 1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M8 6v4M8 11.5v.5" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+    Some calls could not be scored due to errors or missing transcripts.
+  </div>
+
+  <div *ngIf="result.calls.length === 0 && result.status === 'completed'" class="empty-state">
+    No calls found in the past 24 hours.
+  </div>
+
+  <table *ngIf="result.calls.length > 0" class="results-table">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Call ID</th>
+        <th>End Time</th>
+        <th>Summary</th>
+        <th>Accuracy</th>
+        <th>Info Capture</th>
+        <th>Context Adherence</th>
+        <th>Composite Score</th>
+      </tr>
+    </thead>
+    <tbody>
+      <ng-container *ngFor="let call of result.calls">
+        <tr
+          [class.expandable]="call.status === 'scored'"
+          [class.no-summary]="call.status === 'no_summary'"
+          [class.failed]="call.status === 'unscored' || call.status === 'empty_transcript'"
+          (click)="call.status === 'scored' ? toggleRow(call.call_id) : null"
+        >
+          <td class="expand-toggle">
+            <span *ngIf="call.status === 'scored'">
+              {{ isExpanded(call.call_id) ? '▾' : '▸' }}
+            </span>
+          </td>
+          <td>{{ call.call_id }}</td>
+          <td>{{ call.call_end_time ? (call.call_end_time | date:'short':'UTC') : '—' }}</td>
+          <td>{{ call.summary_present ? 'Yes' : 'No' }}</td>
+          <td>
+            <span *ngIf="call.status === 'no_summary'">No Summary</span>
+            <span *ngIf="call.status === 'unscored' || call.status === 'empty_transcript'">—</span>
+            <span *ngIf="call.status === 'scored'" class="score-pill">{{ formatScore(call.accuracy) }}</span>
+          </td>
+          <td>
+            <span *ngIf="call.status !== 'scored'">—</span>
+            <span *ngIf="call.status === 'scored'" class="score-pill">{{ formatScore(call.information_capture) }}</span>
+          </td>
+          <td>
+            <span *ngIf="call.status !== 'scored'">—</span>
+            <span *ngIf="call.status === 'scored'" class="score-pill">{{ formatScore(call.context_adherence) }}</span>
+          </td>
+          <td class="composite-score">
+            <span *ngIf="call.status === 'no_summary'">0.00</span>
+            <span *ngIf="call.status === 'unscored' || call.status === 'empty_transcript'" class="failed-label">Scoring Failed</span>
+            <span *ngIf="call.status === 'scored'">{{ formatScore(call.composite_score) }}</span>
+          </td>
+        </tr>
+        <tr *ngIf="isExpanded(call.call_id) && call.rationale" class="rationale-row">
+          <td colspan="8">
+            <div class="rationale">
+              <div class="rationale-item">
+                <span class="rationale-label">Accuracy</span>
+                {{ call.rationale!.accuracy }}
+              </div>
+              <div class="rationale-item">
+                <span class="rationale-label">Information Capture</span>
+                {{ call.rationale!.information_capture }}
+              </div>
+              <div class="rationale-item">
+                <span class="rationale-label">Context Adherence</span>
+                {{ call.rationale!.context_adherence }}
+              </div>
+            </div>
+          </td>
+        </tr>
+      </ng-container>
+    </tbody>
+  </table>
+</div>

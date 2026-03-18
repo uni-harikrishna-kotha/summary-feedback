@@ -1,0 +1,5 @@
+// Reserve space at the bottom so the debug panel doesn't overlap page content
+:host {
+  display: block;
+  padding-bottom: 380px;
+}

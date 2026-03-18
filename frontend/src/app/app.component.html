@@ -1,0 +1,18 @@
+<header class="app-header">
+  <div class="header-brand">
+    <span class="brand-logo">uniphore</span>
+    <div class="brand-divider"></div>
+    <span class="brand-product">Summary Quality Scoring</span>
+  </div>
+  <span class="header-badge">Internal Tool</span>
+</header>
+
+<div class="page-content">
+  <h1 class="page-title">Call Summary Quality Scoring</h1>
+  <p class="page-subtitle">Score AI-generated call summaries for the past 24 hours using a Judge LLM.</p>
+
+  <app-scoring-form (scoringComplete)="onResult($event)"></app-scoring-form>
+  <app-results-table *ngIf="result" [result]="result"></app-results-table>
+</div>
+
+<app-debug-panel></app-debug-panel>
